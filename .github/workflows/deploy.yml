@@ -9,7 +9,7 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     steps:
-      - name Retrieve tag name
+      - name: Retrieve tag name
         id: tag_name
         uses: olegtarasov/get-tag@v2
       - name: Checkout code
