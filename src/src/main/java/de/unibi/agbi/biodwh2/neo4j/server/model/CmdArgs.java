@@ -2,6 +2,7 @@ package de.unibi.agbi.biodwh2.neo4j.server.model;
 
 import picocli.CommandLine;
 
+@CommandLine.Command(name = "BioDWH2-Neo4j-Server.jar")
 public class CmdArgs {
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "print this message")
     public boolean help;
@@ -17,4 +18,8 @@ public class CmdArgs {
             "-p", "--port"
     }, defaultValue = "7474", paramLabel = "<port>", description = "Specifies the Neo4j browser port (default 7474)")
     public Integer port;
+    @CommandLine.Option(names = {
+            "-bp", "--bolt-port"
+    }, defaultValue = "8083", paramLabel = "<boltPort>", description = "Specifies the Neo4j bolt port (default 8083)")
+    public Integer boltPort;
 }

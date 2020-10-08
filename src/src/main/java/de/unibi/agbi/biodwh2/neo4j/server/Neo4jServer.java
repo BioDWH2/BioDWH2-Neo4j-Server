@@ -37,23 +37,38 @@ public class Neo4jServer {
 
     private void startWorkspaceServer(final CmdArgs commandLine) {
         final String workspacePath = commandLine.start;
-        if (StringUtils.isEmpty(workspacePath) || !Paths.get(workspacePath).toFile().exists()) {
-            LOGGER.error("Workspace path '" + workspacePath + "' was not found");
+        if (!verifyWorkspaceExists(workspacePath)) {
             printHelp(commandLine);
             return;
         }
+        Neo4jService service = new Neo4jService(workspacePath);
+        service.startNeo4jService(commandLine.boltPort);
         final Neo4jBrowser browser = new Neo4jBrowser(workspacePath);
         browser.downloadNeo4jBrowser();
         browser.startNeo4jBrowser(commandLine.port);
     }
 
-    private void createWorkspaceDatabase(final CmdArgs commandLine) {
-        final String workspacePath = commandLine.start;
+    private boolean verifyWorkspaceExists(final String workspacePath) {
         if (StringUtils.isEmpty(workspacePath) || !Paths.get(workspacePath).toFile().exists()) {
-            LOGGER.error("Workspace path '" + workspacePath + "' was not found");
+            if (LOGGER.isErrorEnabled())
+                LOGGER.error("Workspace path '" + workspacePath + "' was not found");
+            return false;
+        }
+        if (LOGGER.isInfoEnabled())
+            LOGGER.info("Using workspace directory '" + workspacePath + "'");
+        return true;
+    }
+
+    private void createWorkspaceDatabase(final CmdArgs commandLine) {
+        final String workspacePath = commandLine.create;
+        if (!verifyWorkspaceExists(workspacePath)) {
             printHelp(commandLine);
             return;
         }
+        Neo4jService service = new Neo4jService(workspacePath);
+        service.deleteOldDatabase();
+        service.startNeo4jService(commandLine.boltPort);
+        service.createDatabase();
     }
 
     private void printHelp(final CmdArgs commandLine) {

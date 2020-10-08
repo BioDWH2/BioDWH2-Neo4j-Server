@@ -47,13 +47,6 @@
         </plugins>
     </build>
 
-    <repositories>
-        <repository>
-            <id>BioDWH2 github</id>
-            <url>https://maven.pkg.github.com/biodwh2/biodwh2</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>de.unibi.agbi.biodwh2</groupId>
@@ -84,6 +77,37 @@
             <groupId>org.rauschig</groupId>
             <artifactId>jarchivelib</artifactId>
             <version>0.7.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j</artifactId>
+            <version>3.5.21</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-nop</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-kernel</artifactId>
+            <version>3.5.20</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-dbms</artifactId>
+            <version>3.5.20</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-bolt</artifactId>
+            <version>3.5.20</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+            <version>1.7.5</version>
         </dependency>
     </dependencies>
 

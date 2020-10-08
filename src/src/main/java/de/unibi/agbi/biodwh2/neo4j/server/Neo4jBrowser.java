@@ -26,14 +26,16 @@ final class Neo4jBrowser {
     private static final String NEO4J_BROWSER_RELEASE_URL = "https://api.github.com/repos/neo4j/neo4j-browser/releases";
     private static final String FALLBACK_DOWNLOAD_URL = "https://github.com/neo4j/neo4j-browser/releases/download/4.1.0/neo4j-browser-4.1.0.tgz";
 
-    private final String workspacePath;
+    private final String neo4jPath;
+    private final String browserDistPath;
 
     public Neo4jBrowser(final String workspacePath) {
-        this.workspacePath = workspacePath;
+        neo4jPath = Paths.get(workspacePath, "neo4j").toString();
+        browserDistPath = Paths.get(neo4jPath, "neo4j-browser/package/dist").toString();
     }
 
     public boolean downloadNeo4jBrowser() {
-        final File browserArchiveFile = Paths.get(workspacePath, "neo4j-browser.tgz").toFile();
+        final File browserArchiveFile = Paths.get(neo4jPath, "neo4j-browser.tgz").toFile();
         if (!browserArchiveFile.exists()) {
             final String downloadUrl = getNeo4jBrowserDownloadUrl();
             if (downloadUrl == null)
@@ -41,7 +43,8 @@ final class Neo4jBrowser {
             try {
                 FileUtils.copyURLToFile(new URL(downloadUrl), browserArchiveFile);
             } catch (IOException e) {
-                LOGGER.error("Failed to download neo4j-browser.", e);
+                if (LOGGER.isErrorEnabled())
+                    LOGGER.error("Failed to download neo4j-browser.", e);
                 return false;
             }
         }
@@ -60,18 +63,20 @@ final class Neo4jBrowser {
                     return release.assets.get(0).browserDownloadUrl;
             return FALLBACK_DOWNLOAD_URL;
         } catch (IOException | ClassCastException e) {
-            LOGGER.error("Failed to retrieve neo4j-browser download url.", e);
+            if (LOGGER.isErrorEnabled())
+                LOGGER.error("Failed to retrieve neo4j-browser download url.", e);
             return null;
         }
     }
 
     private boolean extractNeo4jBrowserArchive(final File browserArchiveFile) {
-        final File destination = Paths.get(workspacePath, "neo4j-browser").toFile();
+        final File destination = Paths.get(neo4jPath, "neo4j-browser").toFile();
         final Archiver archiver = ArchiverFactory.createArchiver("tar", "gz");
         try {
             archiver.extract(browserArchiveFile, destination);
         } catch (IOException e) {
-            LOGGER.error("Failed to extract zipped neo4j-browser file.", e);
+            if (LOGGER.isErrorEnabled())
+                LOGGER.error("Failed to extract zipped neo4j-browser file.", e);
             return false;
         }
         return true;
@@ -85,13 +90,13 @@ final class Neo4jBrowser {
             try {
                 Desktop.getDesktop().browse(new URI("http://localhost:" + port + "/"));
             } catch (IOException | URISyntaxException e) {
-                LOGGER.error("Failed to open Browser", e);
+                if (LOGGER.isErrorEnabled())
+                    LOGGER.error("Failed to open Browser", e);
             }
         }
     }
 
     private void configureJavalin(final JavalinConfig config) {
-        final String wwwRoot = Paths.get(workspacePath, "neo4j-browser/package/dist").toString();
-        config.addStaticFiles(wwwRoot, Location.EXTERNAL);
+        config.addStaticFiles(browserDistPath, Location.EXTERNAL);
     }
 }
