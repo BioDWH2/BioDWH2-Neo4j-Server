@@ -99,7 +99,7 @@ class Neo4jService {
     }
 
     private boolean isPropertyAllowed(final String name) {
-        return !"_modified".equals(name) && !"_revision".equals(name) && !"_label".equals(name) && !"_id".equals(name);
+        return !"_modified".equals(name) && !"_revision".equals(name) && !"__label".equals(name) && !"_id".equals(name);
     }
 
     private void createNeo4jEdges(final Graph graph, final HashMap<Long, Long> nodeIdNeo4jIdMap) {

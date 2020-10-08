@@ -98,5 +98,6 @@ final class Neo4jBrowser {
 
     private void configureJavalin(final JavalinConfig config) {
         config.addStaticFiles(browserDistPath, Location.EXTERNAL);
+        config.showJavalinBanner = false;
     }
 }
