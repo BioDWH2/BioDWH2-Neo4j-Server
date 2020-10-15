@@ -1,0 +1,9 @@
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directory: "/src/"
+    target-branch: "develop"
+    schedule:
+      interval: "daily"
+    ignore:
+      - dependency-name: "org.neo4j:neo4j*"
