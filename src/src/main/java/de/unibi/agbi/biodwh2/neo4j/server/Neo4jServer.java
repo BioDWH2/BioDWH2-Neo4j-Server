@@ -6,6 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class Neo4jServer {
@@ -41,6 +45,8 @@ public class Neo4jServer {
             printHelp(commandLine);
             return;
         }
+        if (!checkNeo4jDatabaseMatchesWorkspace(workspacePath) && LOGGER.isInfoEnabled())
+            LOGGER.warn("The neo4j database is out-of-date and should be recreated with the --create command");
         Neo4jService service = new Neo4jService(workspacePath);
         service.startNeo4jService(commandLine.boltPort);
         final Neo4jBrowser browser = new Neo4jBrowser(workspacePath);
@@ -59,6 +65,21 @@ public class Neo4jServer {
         return true;
     }
 
+    private boolean checkNeo4jDatabaseMatchesWorkspace(final String workspacePath) {
+        try {
+            final String hash = HashUtils.getMd5HashFromFile(Paths.get(workspacePath, "sources/mapped.db").toString());
+            final Path hashFilePath = Paths.get(workspacePath, "neo4j/checksum.txt");
+            if (Files.exists(hashFilePath)) {
+                final String storedHash = new String(Files.readAllBytes(hashFilePath)).trim();
+                return hash.equals(storedHash);
+            }
+        } catch (IOException e) {
+            if (LOGGER.isWarnEnabled())
+                LOGGER.warn("Failed to check hash of workspace mapped graph", e);
+        }
+        return false;
+    }
+
     private void createWorkspaceDatabase(final CmdArgs commandLine) {
         final String workspacePath = commandLine.create;
         if (!verifyWorkspaceExists(workspacePath)) {
@@ -69,6 +90,20 @@ public class Neo4jServer {
         service.deleteOldDatabase();
         service.startNeo4jService(commandLine.boltPort);
         service.createDatabase();
+        storeWorkspaceHash(workspacePath);
+    }
+
+    private void storeWorkspaceHash(final String workspacePath) {
+        final Path hashFilePath = Paths.get(workspacePath, "neo4j/checksum.txt");
+        try {
+            final String hash = HashUtils.getMd5HashFromFile(Paths.get(workspacePath, "sources/mapped.db").toString());
+            final FileWriter writer = new FileWriter(hashFilePath.toFile());
+            writer.write(hash);
+            writer.close();
+        } catch (IOException e) {
+            if (LOGGER.isErrorEnabled())
+                LOGGER.error("Failed to store hash of workspace mapped graph", e);
+        }
     }
 
     private void printHelp(final CmdArgs commandLine) {
