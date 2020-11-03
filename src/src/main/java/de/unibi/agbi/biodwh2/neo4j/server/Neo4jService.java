@@ -1,5 +1,6 @@
 package de.unibi.agbi.biodwh2.neo4j.server;
 
+import apoc.ApocConfiguration;
 import de.unibi.agbi.biodwh2.core.model.graph.Edge;
 import de.unibi.agbi.biodwh2.core.model.graph.Graph;
 import de.unibi.agbi.biodwh2.core.model.graph.Node;
@@ -15,8 +16,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 
 class Neo4jService {
     private static final Logger LOGGER = LoggerFactory.getLogger(Neo4jService.class);
@@ -48,8 +51,21 @@ class Neo4jService {
         builder.setConfig(bolt.enabled, "true").setConfig(bolt.type, "BOLT");
         builder.setConfig(bolt.listen_address, "0.0.0.0:" + port);
         builder.setConfig(bolt.encryption_level, BoltConnector.EncryptionLevel.OPTIONAL.toString());
+        builder.setConfig(GraphDatabaseSettings.plugin_dir, getApocPluginPath());
+        builder.setConfig(GraphDatabaseSettings.procedure_unrestricted, "apoc.*");
         dbService = builder.newGraphDatabase();
         Runtime.getRuntime().addShutdownHook(new Thread(dbService::shutdown));
+    }
+
+    private String getApocPluginPath() {
+        try {
+            return new File(ApocConfiguration.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+                    .getParentFile().toPath().toString();
+        } catch (URISyntaxException e) {
+            if (LOGGER.isWarnEnabled())
+                LOGGER.warn("Failed to register APOC procedures", e);
+        }
+        return null;
     }
 
     public void deleteOldDatabase() {
@@ -89,13 +105,30 @@ class Neo4jService {
             LOGGER.info("Creating nodes...");
         for (final Node node : graph.getNodes()) {
             final org.neo4j.graphdb.Node neo4jNode = dbService.createNode();
-            for (String propertyKey : node.getPropertyKeys())
-                if (isPropertyAllowed(propertyKey))
-                    neo4jNode.setProperty(propertyKey, node.getProperty(propertyKey));
+            for (final String propertyKey : node.getPropertyKeys())
+                setPropertySafe(node, neo4jNode, propertyKey);
             nodeIdNeo4jIdMap.put(node.getId(), neo4jNode.getId());
             neo4jNode.addLabel(Label.label(node.getLabel()));
         }
         return nodeIdNeo4jIdMap;
+    }
+
+    private void setPropertySafe(final Node node, final org.neo4j.graphdb.Node neo4jNode, final String propertyKey) {
+        try {
+            if (isPropertyAllowed(propertyKey)) {
+                Object value = node.getProperty(propertyKey);
+                // TODO
+                if (value instanceof List) {
+                    value = ((List<String>) value).toArray(new String[0]);
+                }
+                neo4jNode.setProperty(propertyKey, value);
+            }
+        } catch (IllegalArgumentException e) {
+            if (LOGGER.isWarnEnabled())
+                LOGGER.warn(
+                        "Illegal property '" + propertyKey + " -> " + node.getProperty(propertyKey) + "' for node '" +
+                        node.getId() + "[" + node.getLabel() + "]'");
+        }
     }
 
     private boolean isPropertyAllowed(final String name) {
