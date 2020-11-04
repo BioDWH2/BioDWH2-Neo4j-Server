@@ -15,6 +15,10 @@ public class CmdArgs {
     }, arity = "1", paramLabel = "<workspacePath>", description = "Create a Neo4j database from the workspace graph")
     public String create;
     @CommandLine.Option(names = {
+            "-cs", "--create-start"
+    }, arity = "1", paramLabel = "<workspacePath>", description = "Create and start a Neo4j database from the workspace graph")
+    public String createStart;
+    @CommandLine.Option(names = {
             "-p", "--port"
     }, defaultValue = "7474", paramLabel = "<port>", description = "Specifies the Neo4j browser port (default 7474)")
     public Integer port;

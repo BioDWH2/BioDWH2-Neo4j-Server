@@ -24,6 +24,8 @@ Usage: BioDWH2-Neo4j-Server.jar [-h] [-bp=<boltPort>] [-c=<workspacePath>]
                       Specifies the Neo4j bolt port (default 8083)
   -c, --create=<workspacePath>
                       Create a Neo4j database from the workspace graph
+  -cs, --create-start=<workspacePath>
+                      Create and start a Neo4j database from the workspace graph
   -h, --help          print this message
   -p, --port=<port>   Specifies the Neo4j browser port (default 7474)
   -s, --start=<workspacePath>

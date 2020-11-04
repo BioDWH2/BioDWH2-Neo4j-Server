@@ -31,7 +31,9 @@ public class Neo4jServer {
     }
 
     private void run(final CmdArgs commandLine) {
-        if (commandLine.start != null)
+        if (commandLine.createStart != null)
+            createAndStartWorkspaceServer(commandLine);
+        else if (commandLine.start != null)
             startWorkspaceServer(commandLine);
         else if (commandLine.create != null)
             createWorkspaceDatabase(commandLine);
@@ -39,16 +41,17 @@ public class Neo4jServer {
             printHelp(commandLine);
     }
 
-    private void startWorkspaceServer(final CmdArgs commandLine) {
-        final String workspacePath = commandLine.start;
+    private void createAndStartWorkspaceServer(final CmdArgs commandLine) {
+        final String workspacePath = commandLine.createStart;
         if (!verifyWorkspaceExists(workspacePath)) {
             printHelp(commandLine);
             return;
         }
-        if (!checkNeo4jDatabaseMatchesWorkspace(workspacePath) && LOGGER.isInfoEnabled())
-            LOGGER.warn("The neo4j database is out-of-date and should be recreated with the --create command");
-        Neo4jService service = new Neo4jService(workspacePath);
+        final Neo4jService service = new Neo4jService(workspacePath);
+        service.deleteOldDatabase();
         service.startNeo4jService(commandLine.boltPort);
+        service.createDatabase();
+        storeWorkspaceHash(workspacePath);
         final Neo4jBrowser browser = new Neo4jBrowser(workspacePath);
         browser.downloadNeo4jBrowser();
         browser.startNeo4jBrowser(commandLine.port);
@@ -63,6 +66,38 @@ public class Neo4jServer {
         if (LOGGER.isInfoEnabled())
             LOGGER.info("Using workspace directory '" + workspacePath + "'");
         return true;
+    }
+
+    private void printHelp(final CmdArgs commandLine) {
+        CommandLine.usage(commandLine, System.out);
+    }
+
+    private void storeWorkspaceHash(final String workspacePath) {
+        final Path hashFilePath = Paths.get(workspacePath, "neo4j/checksum.txt");
+        try {
+            final String hash = HashUtils.getMd5HashFromFile(Paths.get(workspacePath, "sources/mapped.db").toString());
+            final FileWriter writer = new FileWriter(hashFilePath.toFile());
+            writer.write(hash);
+            writer.close();
+        } catch (IOException e) {
+            if (LOGGER.isErrorEnabled())
+                LOGGER.error("Failed to store hash of workspace mapped graph", e);
+        }
+    }
+
+    private void startWorkspaceServer(final CmdArgs commandLine) {
+        final String workspacePath = commandLine.start;
+        if (!verifyWorkspaceExists(workspacePath)) {
+            printHelp(commandLine);
+            return;
+        }
+        if (!checkNeo4jDatabaseMatchesWorkspace(workspacePath) && LOGGER.isInfoEnabled())
+            LOGGER.warn("The neo4j database is out-of-date and should be recreated with the --create command");
+        final Neo4jService service = new Neo4jService(workspacePath);
+        service.startNeo4jService(commandLine.boltPort);
+        final Neo4jBrowser browser = new Neo4jBrowser(workspacePath);
+        browser.downloadNeo4jBrowser();
+        browser.startNeo4jBrowser(commandLine.port);
     }
 
     private boolean checkNeo4jDatabaseMatchesWorkspace(final String workspacePath) {
@@ -86,27 +121,10 @@ public class Neo4jServer {
             printHelp(commandLine);
             return;
         }
-        Neo4jService service = new Neo4jService(workspacePath);
+        final Neo4jService service = new Neo4jService(workspacePath);
         service.deleteOldDatabase();
         service.startNeo4jService(commandLine.boltPort);
         service.createDatabase();
         storeWorkspaceHash(workspacePath);
-    }
-
-    private void storeWorkspaceHash(final String workspacePath) {
-        final Path hashFilePath = Paths.get(workspacePath, "neo4j/checksum.txt");
-        try {
-            final String hash = HashUtils.getMd5HashFromFile(Paths.get(workspacePath, "sources/mapped.db").toString());
-            final FileWriter writer = new FileWriter(hashFilePath.toFile());
-            writer.write(hash);
-            writer.close();
-        } catch (IOException e) {
-            if (LOGGER.isErrorEnabled())
-                LOGGER.error("Failed to store hash of workspace mapped graph", e);
-        }
-    }
-
-    private void printHelp(final CmdArgs commandLine) {
-        CommandLine.usage(commandLine, System.out);
     }
 }
