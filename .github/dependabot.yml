@@ -7,5 +7,4 @@ updates:
       interval: "daily"
     ignore:
       - dependency-name: "org.neo4j:neo4j*"
-      - dependency-name: "org.neo4j.driver:neo4j*"
       - dependency-name: "org.neo4j.procedure:apoc*"
