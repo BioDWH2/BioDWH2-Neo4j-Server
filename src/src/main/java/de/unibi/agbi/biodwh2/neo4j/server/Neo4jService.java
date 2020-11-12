@@ -55,8 +55,8 @@ class Neo4jService {
         builder.setConfig(bolt.enabled, "true").setConfig(bolt.type, "BOLT");
         builder.setConfig(bolt.listen_address, "0.0.0.0:" + port);
         builder.setConfig(bolt.encryption_level, BoltConnector.EncryptionLevel.OPTIONAL.toString());
-        builder.setConfig(GraphDatabaseSettings.plugin_dir, getApocPluginPath());
-        builder.setConfig(GraphDatabaseSettings.procedure_unrestricted, "apoc.*");
+        //builder.setConfig(GraphDatabaseSettings.plugin_dir, getApocPluginPath());
+        //builder.setConfig(GraphDatabaseSettings.procedure_unrestricted, "apoc.*");
         dbService = builder.newGraphDatabase();
         Runtime.getRuntime().addShutdownHook(new Thread(dbService::shutdown));
         transactionTemplate = new TransactionTemplate().with(dbService);
@@ -175,8 +175,11 @@ class Neo4jService {
             LOGGER.info("Creating indices...");
         try (Transaction tx = dbService.beginTx()) {
             Schema schema = dbService.schema();
-            for (Label label : dbService.getAllLabels())
+            for (Label label : dbService.getAllLabels()) {
+                if (LOGGER.isInfoEnabled())
+                    LOGGER.info("Creating unique index on '__id' field for label '" + label + "'...");
                 schema.constraintFor(label).assertPropertyIsUnique("__id").create();
+            }
             tx.success();
         } catch (Exception e) {
             if (LOGGER.isErrorEnabled())

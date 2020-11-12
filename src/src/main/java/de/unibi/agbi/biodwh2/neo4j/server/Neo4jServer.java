@@ -73,6 +73,8 @@ public class Neo4jServer {
     }
 
     private void storeWorkspaceHash(final String workspacePath) {
+        if (LOGGER.isInfoEnabled())
+            LOGGER.info("Updating workspace neo4j cache checksum...");
         final Path hashFilePath = Paths.get(workspacePath, "neo4j/checksum.txt");
         try {
             final String hash = HashUtils.getMd5HashFromFile(Paths.get(workspacePath, "sources/mapped.db").toString());

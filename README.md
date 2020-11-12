@@ -6,12 +6,12 @@ This repository contains the **BioDWH2-Neo4j-Server** utility which can be used 
 ## Usage
 Creating a database from any workspace is done using the following command. Every time the workspace is updated or changed, the create command has to be executed again.
 ~~~BASH
-> BioDWH2-Neo4j-Server.jar --create /path/to/workspace
+> java -jar BioDWH2-Neo4j-Server.jar --create /path/to/workspace
 ~~~
 
 Once the database has been created, the database and Neo4j-Browser can be started as follows:
 ~~~BASH
-> BioDWH2-Neo4j-Server.jar --start /path/to/workspace
+> java -jar BioDWH2-Neo4j-Server.jar --start /path/to/workspace
 ~~~
 
 Optionally, the ports for the Neo4j-Browser and Neo4j bolt protocol can be adjusted using the port and bolt-port command line arguments.
@@ -19,7 +19,8 @@ Optionally, the ports for the Neo4j-Browser and Neo4j bolt protocol can be adjus
 ## Help
 ~~~
 Usage: BioDWH2-Neo4j-Server.jar [-h] [-bp=<boltPort>] [-c=<workspacePath>]
-                                [-p=<port>] [-s=<workspacePath>]
+                                [-cs=<workspacePath>] [-p=<port>]
+                                [-s=<workspacePath>]
   -bp, --bolt-port=<boltPort>
                       Specifies the Neo4j bolt port (default 8083)
   -c, --create=<workspacePath>
