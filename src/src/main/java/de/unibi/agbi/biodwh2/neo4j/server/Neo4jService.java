@@ -55,8 +55,9 @@ class Neo4jService {
         builder.setConfig(bolt.enabled, "true").setConfig(bolt.type, "BOLT");
         builder.setConfig(bolt.listen_address, "0.0.0.0:" + port);
         builder.setConfig(bolt.encryption_level, BoltConnector.EncryptionLevel.OPTIONAL.toString());
-        //builder.setConfig(GraphDatabaseSettings.plugin_dir, getApocPluginPath());
-        //builder.setConfig(GraphDatabaseSettings.procedure_unrestricted, "apoc.*");
+        builder.setConfig(GraphDatabaseSettings.plugin_dir, getApocPluginPath());
+        builder.setConfig(GraphDatabaseSettings.procedure_unrestricted, "apoc.*");
+        builder.setConfig(GraphDatabaseSettings.procedure_whitelist, "apoc.*");
         dbService = builder.newGraphDatabase();
         Runtime.getRuntime().addShutdownHook(new Thread(dbService::shutdown));
         transactionTemplate = new TransactionTemplate().with(dbService);

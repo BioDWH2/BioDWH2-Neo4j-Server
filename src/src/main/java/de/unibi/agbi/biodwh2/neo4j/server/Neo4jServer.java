@@ -77,7 +77,7 @@ public class Neo4jServer {
             LOGGER.info("Updating workspace neo4j cache checksum...");
         final Path hashFilePath = Paths.get(workspacePath, "neo4j/checksum.txt");
         try {
-            final String hash = HashUtils.getMd5HashFromFile(Paths.get(workspacePath, "sources/mapped.db").toString());
+            final String hash = HashUtils.getFastPseudoHashFromFile(Paths.get(workspacePath, "sources/mapped.db").toString());
             final FileWriter writer = new FileWriter(hashFilePath.toFile());
             writer.write(hash);
             writer.close();
@@ -104,7 +104,7 @@ public class Neo4jServer {
 
     private boolean checkNeo4jDatabaseMatchesWorkspace(final String workspacePath) {
         try {
-            final String hash = HashUtils.getMd5HashFromFile(Paths.get(workspacePath, "sources/mapped.db").toString());
+            final String hash = HashUtils.getFastPseudoHashFromFile(Paths.get(workspacePath, "sources/mapped.db").toString());
             final Path hashFilePath = Paths.get(workspacePath, "neo4j/checksum.txt");
             if (Files.exists(hashFilePath)) {
                 final String storedHash = new String(Files.readAllBytes(hashFilePath)).trim();
