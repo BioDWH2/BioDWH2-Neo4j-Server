@@ -141,7 +141,8 @@ class Neo4jService {
                 if (value instanceof List) {
                     value = ((List<String>) value).toArray(new String[0]);
                 }
-                neo4jNode.setProperty(propertyKey, value);
+                if (value != null)
+                    neo4jNode.setProperty(propertyKey, value);
             }
         } catch (IllegalArgumentException e) {
             if (LOGGER.isWarnEnabled())
@@ -165,8 +166,11 @@ class Neo4jService {
                 final org.neo4j.graphdb.Node toNode = dbService.getNodeById(nodeIdNeo4jIdMap.get(edge.getToId()));
                 final Relationship relationship = fromNode.createRelationshipTo(toNode, relationshipType);
                 for (final String propertyKey : edge.getPropertyKeys())
-                    if (isPropertyAllowed(propertyKey))
-                        relationship.setProperty(propertyKey, edge.getProperty(propertyKey));
+                    if (isPropertyAllowed(propertyKey)) {
+                        final Object value = edge.getProperty(propertyKey);
+                        if (value != null)
+                            relationship.setProperty(propertyKey, value);
+                    }
             }
         }));
     }
