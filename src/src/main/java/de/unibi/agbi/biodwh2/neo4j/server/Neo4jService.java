@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
@@ -137,10 +138,8 @@ class Neo4jService {
         try {
             if (isPropertyAllowed(propertyKey)) {
                 Object value = node.getProperty(propertyKey);
-                // TODO
-                if (value instanceof List) {
-                    value = ((List<String>) value).toArray(new String[0]);
-                }
+                if (value instanceof Collection)
+                    value = convertCollectionToArray((Collection<?>) value);
                 if (value != null)
                     neo4jNode.setProperty(propertyKey, value);
             }
@@ -156,6 +155,36 @@ class Neo4jService {
         return !"_modified".equals(name) && !"_revision".equals(name) && !"__label".equals(name) && !"_id".equals(name);
     }
 
+    @SuppressWarnings({"SuspiciousToArrayCall"})
+    private Object convertCollectionToArray(final Collection<?> collection) {
+        Class<?> type = null;
+        for (Object t : collection) {
+            if (t != null) {
+                type = t.getClass();
+                break;
+            }
+        }
+        if (type != null) {
+            if (type.equals(String.class))
+                return collection.stream().map(type::cast).toArray(String[]::new);
+            if (type.equals(Boolean.class))
+                return collection.stream().map(type::cast).toArray(Boolean[]::new);
+            if (type.equals(Integer.class))
+                return collection.stream().map(type::cast).toArray(Integer[]::new);
+            if (type.equals(Float.class))
+                return collection.stream().map(type::cast).toArray(Float[]::new);
+            if (type.equals(Long.class))
+                return collection.stream().map(type::cast).toArray(Long[]::new);
+            if (type.equals(Double.class))
+                return collection.stream().map(type::cast).toArray(Double[]::new);
+            if (type.equals(Byte.class))
+                return collection.stream().map(type::cast).toArray(Byte[]::new);
+            if (type.equals(Short.class))
+                return collection.stream().map(type::cast).toArray(Short[]::new);
+        }
+        return collection.toArray();
+    }
+
     private void createNeo4jEdges(final Graph graph, final HashMap<Long, Long> nodeIdNeo4jIdMap) {
         if (LOGGER.isInfoEnabled())
             LOGGER.info("Creating edges...");
@@ -167,7 +196,9 @@ class Neo4jService {
                 final Relationship relationship = fromNode.createRelationshipTo(toNode, relationshipType);
                 for (final String propertyKey : edge.getPropertyKeys())
                     if (isPropertyAllowed(propertyKey)) {
-                        final Object value = edge.getProperty(propertyKey);
+                        Object value = edge.getProperty(propertyKey);
+                        if (value instanceof Collection)
+                            value = convertCollectionToArray((Collection<?>) value);
                         if (value != null)
                             relationship.setProperty(propertyKey, value);
                     }
