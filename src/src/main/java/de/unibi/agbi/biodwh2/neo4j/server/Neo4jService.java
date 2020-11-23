@@ -182,7 +182,7 @@ class Neo4jService {
             if (type.equals(Short.class))
                 return collection.stream().map(type::cast).toArray(Short[]::new);
         }
-        return collection.toArray();
+        return collection.stream().map(Object::toString).toArray(String[]::new);
     }
 
     private void createNeo4jEdges(final Graph graph, final HashMap<Long, Long> nodeIdNeo4jIdMap) {
