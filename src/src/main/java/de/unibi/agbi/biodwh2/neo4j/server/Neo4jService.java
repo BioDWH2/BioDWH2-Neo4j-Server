@@ -92,15 +92,12 @@ class Neo4jService {
     public void createDatabase() {
         if (LOGGER.isInfoEnabled())
             LOGGER.info("Creating Neo4j database...");
-        final Graph graph = new Graph(Paths.get(workspacePath, "sources/mapped.db").toString(), true);
-        try {
+        try (Graph graph = new Graph(Paths.get(workspacePath, "sources/mapped.db").toString(), true)) {
             final HashMap<Long, Long> nodeIdNeo4jIdMap = createNeo4jNodes(graph);
             createNeo4jEdges(graph, nodeIdNeo4jIdMap);
         } catch (Exception e) {
             if (LOGGER.isErrorEnabled())
                 LOGGER.error("Failed to create neo4j database '" + databasePath + "'", e);
-        } finally {
-            graph.dispose();
         }
         createNeo4jIndices();
     }
@@ -112,10 +109,11 @@ class Neo4jService {
         batchIterate(graph.getNodes(), nodes -> transactionTemplate.execute(tx -> {
             for (final Node node : nodes) {
                 final org.neo4j.graphdb.Node neo4jNode = dbService.createNode();
-                for (final String propertyKey : node.getPropertyKeys())
+                for (final String propertyKey : node.keySet())
                     setPropertySafe(node, neo4jNode, propertyKey);
                 nodeIdNeo4jIdMap.put(node.getId(), neo4jNode.getId());
-                neo4jNode.addLabel(Label.label(node.getLabel()));
+                for (final String label : node.getLabels())
+                    neo4jNode.addLabel(Label.label(label));
             }
         }));
         return nodeIdNeo4jIdMap;
@@ -136,7 +134,7 @@ class Neo4jService {
 
     private void setPropertySafe(final Node node, final org.neo4j.graphdb.Node neo4jNode, final String propertyKey) {
         try {
-            if (isPropertyAllowed(propertyKey)) {
+            if (!Node.IGNORED_FIELDS.contains(propertyKey)) {
                 Object value = node.getProperty(propertyKey);
                 if (value instanceof Collection)
                     value = convertCollectionToArray((Collection<?>) value);
@@ -147,12 +145,8 @@ class Neo4jService {
             if (LOGGER.isWarnEnabled())
                 LOGGER.warn(
                         "Illegal property '" + propertyKey + " -> " + node.getProperty(propertyKey) + "' for node '" +
-                        node.getId() + "[" + node.getLabel() + "]'");
+                        node.getId() + "[" + String.join(":", node.getLabels()) + "]'");
         }
-    }
-
-    private boolean isPropertyAllowed(final String name) {
-        return !"_modified".equals(name) && !"_revision".equals(name) && !"__label".equals(name) && !"_id".equals(name);
     }
 
     @SuppressWarnings({"SuspiciousToArrayCall"})
@@ -194,8 +188,8 @@ class Neo4jService {
                 final org.neo4j.graphdb.Node fromNode = dbService.getNodeById(nodeIdNeo4jIdMap.get(edge.getFromId()));
                 final org.neo4j.graphdb.Node toNode = dbService.getNodeById(nodeIdNeo4jIdMap.get(edge.getToId()));
                 final Relationship relationship = fromNode.createRelationshipTo(toNode, relationshipType);
-                for (final String propertyKey : edge.getPropertyKeys())
-                    if (isPropertyAllowed(propertyKey)) {
+                for (final String propertyKey : edge.keySet())
+                    if (!Edge.IGNORED_FIELDS.contains(propertyKey)) {
                         Object value = edge.getProperty(propertyKey);
                         if (value instanceof Collection)
                             value = convertCollectionToArray((Collection<?>) value);
