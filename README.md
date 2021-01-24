@@ -1,9 +1,16 @@
+![Java CI](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/workflows/Java%20CI/badge.svg?branch=develop) ![Release](https://img.shields.io/github/v/release/BioDWH2/BioDWH2-Neo4j-Server) ![Downloads](https://img.shields.io/github/downloads/BioDWH2/BioDWH2-Neo4j-Server/total) ![License](https://img.shields.io/github/license/BioDWH2/BioDWH2-Neo4j-Server)
+
 # BioDWH2-Neo4j-Server
 **BioDWH2** is an easy-to-use, automated, graph-based data warehouse and mapping tool for bioinformatics and medical informatics. The main repository can be found [here](https://github.com/BioDWH2/BioDWH2).
 
 This repository contains the **BioDWH2-Neo4j-Server** utility which can be used to create and explore a Neo4j graph database from any BioDWH2 workspace. There is no need for any Neo4j installation. All necessary components are bundled with this tool.
 
+## Download
+The latest release version of **BioDWH2-Neo4j-Server** can be downloaded [here](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/latest).
+
 ## Usage
+BioDWH2-Neo4j-Server requires the Java Runtime Environment version 8. The JRE 8 is available [here](https://www.oracle.com/java/technologies/javase-jre8-downloads.html).
+
 Creating a database from any workspace is done using the following command. Every time the workspace is updated or changed, the create command has to be executed again.
 ~~~BASH
 > java -jar BioDWH2-Neo4j-Server.jar --create /path/to/workspace
