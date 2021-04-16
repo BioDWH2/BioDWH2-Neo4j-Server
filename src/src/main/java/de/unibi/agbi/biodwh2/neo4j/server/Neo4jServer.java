@@ -65,8 +65,8 @@ public class Neo4jServer {
         service.createDatabase();
         storeWorkspaceHash(workspacePath);
         final Neo4jBrowser browser = new Neo4jBrowser(workspacePath);
-        browser.downloadNeo4jBrowser();
-        browser.startNeo4jBrowser(commandLine.port);
+        if (browser.downloadNeo4jBrowser())
+            browser.startNeo4jBrowser(commandLine.port);
     }
 
     private boolean verifyWorkspaceExists(final String workspacePath) {
@@ -111,8 +111,8 @@ public class Neo4jServer {
         final Neo4jService service = new Neo4jService(workspacePath);
         service.startNeo4jService(commandLine.boltPort);
         final Neo4jBrowser browser = new Neo4jBrowser(workspacePath);
-        browser.downloadNeo4jBrowser();
-        browser.startNeo4jBrowser(commandLine.port);
+        if (browser.downloadNeo4jBrowser())
+            browser.startNeo4jBrowser(commandLine.port);
     }
 
     private boolean checkNeo4jDatabaseMatchesWorkspace(final String workspacePath) {

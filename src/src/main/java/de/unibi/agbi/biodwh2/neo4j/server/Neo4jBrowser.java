@@ -6,18 +6,23 @@ import de.unibi.agbi.biodwh2.neo4j.server.model.GithubRelease;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
 import io.javalin.http.staticfiles.Location;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileUtils;
-import org.rauschig.jarchivelib.Archiver;
-import org.rauschig.jarchivelib.ArchiverFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -86,10 +91,21 @@ final class Neo4jBrowser {
     }
 
     private boolean extractNeo4jBrowserArchive(final File browserArchiveFile) {
-        final File destination = Paths.get(neo4jPath, "neo4j-browser").toFile();
-        final Archiver archiver = ArchiverFactory.createArchiver("tar", "gz");
-        try {
-            archiver.extract(browserArchiveFile, destination);
+        final String destination = Paths.get(neo4jPath, "neo4j-browser").toString();
+        try (final InputStream inputStream = new FileInputStream(browserArchiveFile);
+             final GzipCompressorInputStream gzipInputStream = new GzipCompressorInputStream(inputStream);
+             final TarArchiveInputStream tarInputStream = new TarArchiveInputStream(gzipInputStream)) {
+            TarArchiveEntry entry;
+            while ((entry = (TarArchiveEntry) tarInputStream.getNextEntry()) != null) {
+                if (entry.isFile()) {
+                    final Path f = Paths.get(destination, entry.getName());
+                    final Path parent = f.getParent();
+                    if (parent != null && !parent.toFile().exists())
+                        Files.createDirectories(parent);
+                    if (!f.toFile().exists())
+                        Files.copy(tarInputStream, f);
+                }
+            }
         } catch (IOException e) {
             if (LOGGER.isErrorEnabled())
                 LOGGER.error("Failed to extract zipped neo4j-browser file.", e);
