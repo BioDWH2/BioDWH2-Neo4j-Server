@@ -142,6 +142,8 @@ public class Neo4jServer {
         service.startNeo4jService(commandLine.boltPort);
         service.createDatabase();
         storeWorkspaceHash(workspacePath);
+        LOGGER.info("Neo4j database successfully created. Shutting down...");
+        service.shutdown();
     }
 
     private void checkForUpdate() {

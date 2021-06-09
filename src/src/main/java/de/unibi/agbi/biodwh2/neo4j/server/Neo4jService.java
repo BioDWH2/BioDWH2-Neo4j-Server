@@ -89,6 +89,10 @@ class Neo4jService {
         }
     }
 
+    public void shutdown() {
+        dbService.shutdown();
+    }
+
     public void createDatabase() {
         if (LOGGER.isInfoEnabled())
             LOGGER.info("Creating Neo4j database...");
