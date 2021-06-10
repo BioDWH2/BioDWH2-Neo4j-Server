@@ -1,6 +1,5 @@
 package de.unibi.agbi.biodwh2.neo4j.server;
 
-import apoc.ApocConfiguration;
 import de.unibi.agbi.biodwh2.core.model.graph.Edge;
 import de.unibi.agbi.biodwh2.core.model.graph.Graph;
 import de.unibi.agbi.biodwh2.core.model.graph.Node;
@@ -12,12 +11,13 @@ import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.graphdb.schema.Schema;
 import org.neo4j.helpers.TransactionTemplate;
 import org.neo4j.kernel.configuration.BoltConnector;
+import org.neo4j.kernel.impl.proc.Procedures;
+import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,23 +56,25 @@ class Neo4jService {
         builder.setConfig(bolt.enabled, "true").setConfig(bolt.type, "BOLT");
         builder.setConfig(bolt.listen_address, "0.0.0.0:" + port);
         builder.setConfig(bolt.encryption_level, BoltConnector.EncryptionLevel.OPTIONAL.toString());
-        builder.setConfig(GraphDatabaseSettings.plugin_dir, getApocPluginPath());
         builder.setConfig(GraphDatabaseSettings.procedure_unrestricted, "apoc.*");
         builder.setConfig(GraphDatabaseSettings.procedure_whitelist, "apoc.*");
         dbService = builder.newGraphDatabase();
+        registerApocProcedures(dbService);
         Runtime.getRuntime().addShutdownHook(new Thread(dbService::shutdown));
         transactionTemplate = new TransactionTemplate().with(dbService);
     }
 
-    private String getApocPluginPath() {
-        try {
-            return new File(ApocConfiguration.class.getProtectionDomain().getCodeSource().getLocation().toURI())
-                    .getParentFile().toPath().toString();
-        } catch (URISyntaxException e) {
-            if (LOGGER.isWarnEnabled())
-                LOGGER.warn("Failed to register APOC procedures", e);
+    public static void registerApocProcedures(GraphDatabaseService db) {
+        final Procedures proceduresService = ((GraphDatabaseAPI) db).getDependencyResolver().resolveDependency(
+                Procedures.class, DependencyResolver.SelectionStrategy.ONLY);
+        for (final Class<?> procedure : Factory.getInstance().loadAllClasses("apoc.")) {
+            try {
+                proceduresService.registerProcedure(procedure, false);
+                proceduresService.registerFunction(procedure, false);
+                proceduresService.registerAggregationFunction(procedure, false);
+            } catch (Throwable ignored) {
+            }
         }
-        return null;
     }
 
     public void deleteOldDatabase() {
