@@ -1,5 +1,15 @@
 # Changelog
 
+## 📦 Version [v1.2.2](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/tag/v1.2.2)
+
+Released: 16.06.2021
+
+ * ```[chore]``` Update dependencies
+
+ > This is a breaking change release due to the new BioDWH2 core version v0.3.5. Only workspaces created with BioDWH2 v0.3.5 or later work with this version.
+
+---
+
 ## 📦 Version [v1.2.1](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/tag/v1.2.1)
 
 Released: 10.06.2021
