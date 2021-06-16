@@ -118,8 +118,7 @@ class Neo4jService {
                 for (final String propertyKey : node.keySet())
                     setPropertySafe(node, neo4jNode, propertyKey);
                 nodeIdNeo4jIdMap.put(node.getId(), neo4jNode.getId());
-                for (final String label : node.getLabels())
-                    neo4jNode.addLabel(Label.label(label));
+                neo4jNode.addLabel(Label.label(node.getLabel()));
             }
         }));
         return nodeIdNeo4jIdMap;
@@ -151,7 +150,7 @@ class Neo4jService {
             if (LOGGER.isWarnEnabled())
                 LOGGER.warn(
                         "Illegal property '" + propertyKey + " -> " + node.getProperty(propertyKey) + "' for node '" +
-                        node.getId() + "[" + String.join(":", node.getLabels()) + "]'");
+                        node.getId() + "[:" + node.getLabel() + "]'");
         }
     }
 
