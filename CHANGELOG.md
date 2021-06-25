@@ -1,5 +1,12 @@
 # Changelog
 
+## 📦 Version [v1.2.3](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/tag/v1.2.3)
+
+Released: 25.06.2021
+
+ * ```[feature]``` Reuse core BioDWH2Updater
+ * ```[chore]``` Update dependencies
+
 ## 📦 Version [v1.2.2](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/tag/v1.2.2)
 
 Released: 16.06.2021
