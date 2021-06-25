@@ -2,7 +2,7 @@ package de.unibi.agbi.biodwh2.neo4j.server;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.unibi.agbi.biodwh2.neo4j.server.model.GithubRelease;
+import de.unibi.agbi.biodwh2.core.model.github.GithubRelease;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
 import io.javalin.http.staticfiles.Location;
