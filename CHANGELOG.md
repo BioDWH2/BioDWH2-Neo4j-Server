@@ -1,5 +1,12 @@
 # Changelog
 
+## 📦 Version [v1.2.4](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/tag/v1.2.4)
+
+Released: 30.06.2021
+
+ * ```[feature]``` Create all node indices in neo4j from graph
+ * ```[chore]``` Update dependencies
+
 ## 📦 Version [v1.2.3](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/tag/v1.2.3)
 
 Released: 25.06.2021
