@@ -2,6 +2,7 @@ package de.unibi.agbi.biodwh2.neo4j.server;
 
 import de.unibi.agbi.biodwh2.core.model.graph.Edge;
 import de.unibi.agbi.biodwh2.core.model.graph.Graph;
+import de.unibi.agbi.biodwh2.core.model.graph.IndexDescription;
 import de.unibi.agbi.biodwh2.core.model.graph.Node;
 import org.apache.commons.io.FileUtils;
 import org.neo4j.graphdb.*;
@@ -101,11 +102,11 @@ class Neo4jService {
         try (Graph graph = new Graph(Paths.get(workspacePath, "sources/mapped.db"), true)) {
             final HashMap<Long, Long> nodeIdNeo4jIdMap = createNeo4jNodes(graph);
             createNeo4jEdges(graph, nodeIdNeo4jIdMap);
+            createNeo4jIndices(graph);
         } catch (Exception e) {
             if (LOGGER.isErrorEnabled())
                 LOGGER.error("Failed to create neo4j database '" + databasePath + "'", e);
         }
-        createNeo4jIndices();
     }
 
     private HashMap<Long, Long> createNeo4jNodes(final Graph graph) {
@@ -205,20 +206,30 @@ class Neo4jService {
         }));
     }
 
-    private void createNeo4jIndices() {
+    private void createNeo4jIndices(final Graph graph) {
         if (LOGGER.isInfoEnabled())
             LOGGER.info("Creating indices...");
+        final IndexDescription[] indices = graph.indexDescriptions();
         try (Transaction tx = dbService.beginTx()) {
             Schema schema = dbService.schema();
-            for (Label label : dbService.getAllLabels()) {
+            for (final IndexDescription index : indices) {
                 if (LOGGER.isInfoEnabled())
-                    LOGGER.info("Creating unique index on '__id' field for label '" + label + "'...");
-                schema.constraintFor(label).assertPropertyIsUnique("__id").create();
+                    LOGGER.info("Creating " + index.getType() + " index on '" + index.getProperty() + "' field for " +
+                                index.getTarget() + " label '" + index.getLabel() + "'...");
+                final Label label = Label.label(index.getLabel());
+                if (index.getTarget() == IndexDescription.Target.NODE) {
+                    if (index.getType() == IndexDescription.Type.UNIQUE)
+                        schema.constraintFor(label).assertPropertyIsUnique(index.getProperty()).create();
+                    else
+                        schema.indexFor(label).on(index.getProperty()).create();
+                } else {
+                    // TODO
+                }
             }
             tx.success();
         } catch (Exception e) {
             if (LOGGER.isErrorEnabled())
-                LOGGER.error("Failed to create neo4j database '" + databasePath + "'", e);
+                LOGGER.error("Failed to create neo4j indices", e);
         }
     }
 }
