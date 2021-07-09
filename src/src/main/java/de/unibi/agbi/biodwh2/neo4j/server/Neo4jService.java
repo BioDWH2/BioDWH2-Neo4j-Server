@@ -99,7 +99,7 @@ class Neo4jService {
     public void createDatabase() {
         if (LOGGER.isInfoEnabled())
             LOGGER.info("Creating Neo4j database...");
-        try (Graph graph = new Graph(Paths.get(workspacePath, "sources/mapped.db"), true)) {
+        try (Graph graph = new Graph(Paths.get(workspacePath, "sources/mapped.db"), true, true)) {
             final HashMap<Long, Long> nodeIdNeo4jIdMap = createNeo4jNodes(graph);
             createNeo4jEdges(graph, nodeIdNeo4jIdMap);
             createNeo4jIndices(graph);
