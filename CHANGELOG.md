@@ -1,5 +1,12 @@
 # Changelog
 
+## 📦 Version [v1.2.5](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/tag/v1.2.5)
+
+Released: 04.08.2021
+
+ * ```[feature]``` BioDWH2 graph is now opened read-only during creation
+ * ```[chore]``` Update dependencies
+
 ## 📦 Version [v1.2.4](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/tag/v1.2.4)
 
 Released: 30.06.2021
