@@ -94,7 +94,7 @@
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin</artifactId>
-            <version>3.13.8</version>
+            <version>3.13.10</version>
         </dependency>
         <dependency>
             <groupId>info.picocli</groupId>
@@ -104,12 +104,12 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
-            <version>1.20</version>
+            <version>1.21</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j</artifactId>
-            <version>3.5.28</version>
+            <version>3.5.29</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -120,12 +120,12 @@
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-dbms</artifactId>
-            <version>3.5.28</version>
+            <version>3.5.29</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-bolt</artifactId>
-            <version>3.5.28</version>
+            <version>3.5.29</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j.procedure</groupId>
