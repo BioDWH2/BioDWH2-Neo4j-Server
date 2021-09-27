@@ -12,6 +12,7 @@ import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.graphdb.schema.Schema;
 import org.neo4j.helpers.TransactionTemplate;
 import org.neo4j.kernel.configuration.BoltConnector;
+import org.neo4j.kernel.configuration.Settings;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.slf4j.Logger;
@@ -32,6 +33,7 @@ class Neo4jService {
     private final String workspacePath;
     private final String neo4jPath;
     private final String databasePath;
+    private final String importPath;
     private GraphDatabaseService dbService;
     private TransactionTemplate transactionTemplate;
 
@@ -39,6 +41,7 @@ class Neo4jService {
         this.workspacePath = workspacePath;
         neo4jPath = Paths.get(workspacePath, "neo4j").toString();
         databasePath = Paths.get(neo4jPath, "neo4j.db").toString();
+        importPath = Paths.get(neo4jPath, "import").toString();
     }
 
     public void startNeo4jService(Integer port) {
@@ -46,6 +49,8 @@ class Neo4jService {
             port = 8083;
         if (LOGGER.isInfoEnabled())
             LOGGER.info("Starting Neo4j DBMS on bolt://localhost:" + port + "...");
+        Paths.get(neo4jPath).toFile().mkdir();
+        Paths.get(importPath).toFile().mkdir();
         BoltConnector bolt = new BoltConnector("0");
         GraphDatabaseBuilder builder = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(
                 Paths.get(databasePath).toFile());
@@ -59,6 +64,8 @@ class Neo4jService {
         builder.setConfig(bolt.encryption_level, BoltConnector.EncryptionLevel.OPTIONAL.toString());
         builder.setConfig(GraphDatabaseSettings.procedure_unrestricted, "apoc.*");
         builder.setConfig(GraphDatabaseSettings.procedure_whitelist, "apoc.*");
+        builder.setConfig(Settings.setting("dbms.directories.import", Settings.STRING, ""), importPath);
+        builder.setConfig(Settings.setting("apoc.export.file.enabled", Settings.BOOLEAN, "false"), "true");
         dbService = builder.newGraphDatabase();
         registerApocProcedures(dbService);
         Runtime.getRuntime().addShutdownHook(new Thread(dbService::shutdown));
