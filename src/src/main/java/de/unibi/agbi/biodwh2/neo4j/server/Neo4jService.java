@@ -11,15 +11,17 @@ import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.graphdb.schema.Schema;
 import org.neo4j.helpers.TransactionTemplate;
+import org.neo4j.helpers.collection.MapUtil;
 import org.neo4j.kernel.configuration.BoltConnector;
+import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.configuration.Settings;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,44 +34,61 @@ class Neo4jService {
 
     private final String workspacePath;
     private final String neo4jPath;
-    private final String databasePath;
+    private final Path databasePath;
     private final String importPath;
+    private final Path configFilePath;
     private GraphDatabaseService dbService;
     private TransactionTemplate transactionTemplate;
 
     public Neo4jService(final String workspacePath) {
         this.workspacePath = workspacePath;
         neo4jPath = Paths.get(workspacePath, "neo4j").toString();
-        databasePath = Paths.get(neo4jPath, "neo4j.db").toString();
+        databasePath = Paths.get(neo4jPath, "neo4j.db");
         importPath = Paths.get(neo4jPath, "import").toString();
+        configFilePath = Paths.get(neo4jPath, "neo4j.conf");
     }
 
     public void startNeo4jService(Integer port) {
-        if (port == null)
-            port = 8083;
-        if (LOGGER.isInfoEnabled())
-            LOGGER.info("Starting Neo4j DBMS on bolt://localhost:" + port + "...");
         Paths.get(neo4jPath).toFile().mkdir();
         Paths.get(importPath).toFile().mkdir();
-        BoltConnector bolt = new BoltConnector("0");
-        GraphDatabaseBuilder builder = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(
-                Paths.get(databasePath).toFile());
-        builder.setConfig(GraphDatabaseSettings.auth_enabled, "false");
-        builder.setConfig(GraphDatabaseSettings.pagecache_memory, "512M");
-        builder.setConfig(GraphDatabaseSettings.string_block_size, "60");
-        builder.setConfig(GraphDatabaseSettings.array_block_size, "300");
-        builder.setConfig(GraphDatabaseSettings.store_internal_log_level, "DEBUG");
-        builder.setConfig(bolt.enabled, "true").setConfig(bolt.type, "BOLT");
-        builder.setConfig(bolt.listen_address, "0.0.0.0:" + port);
-        builder.setConfig(bolt.encryption_level, BoltConnector.EncryptionLevel.OPTIONAL.toString());
-        builder.setConfig(GraphDatabaseSettings.procedure_unrestricted, "apoc.*");
-        builder.setConfig(GraphDatabaseSettings.procedure_whitelist, "apoc.*");
-        builder.setConfig(Settings.setting("dbms.directories.import", Settings.STRING, ""), importPath);
-        builder.setConfig(Settings.setting("apoc.export.file.enabled", Settings.BOOLEAN, "false"), "true");
+        final Config config = defaultConfigFileExists() ? Config.fromFile(configFilePath).build() :
+                              createAndStoreDefaultConfig(port);
+        if (LOGGER.isInfoEnabled())
+            LOGGER.info("Starting Neo4j DBMS on bolt://" + config.get(config.boltConnectors().get(0).listen_address) +
+                        "...");
+        GraphDatabaseBuilder builder = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(databasePath.toFile());
+        builder.setConfig(config.getRaw());
         dbService = builder.newGraphDatabase();
         registerApocProcedures(dbService);
         Runtime.getRuntime().addShutdownHook(new Thread(dbService::shutdown));
         transactionTemplate = new TransactionTemplate().with(dbService);
+    }
+
+    private boolean defaultConfigFileExists() {
+        return configFilePath.toFile().exists();
+    }
+
+    private Config createAndStoreDefaultConfig(final Integer port) {
+        final Config.Builder builder = Config.builder().withServerDefaults();
+        builder.withSetting(GraphDatabaseSettings.pagecache_memory, "512M");
+        builder.withSetting(GraphDatabaseSettings.string_block_size, "60");
+        builder.withSetting(GraphDatabaseSettings.array_block_size, "300");
+        builder.withSetting(GraphDatabaseSettings.store_internal_log_level, "DEBUG");
+        BoltConnector bolt = new BoltConnector("bolt");
+        builder.withSetting(bolt.listen_address, "0.0.0.0:" + (port == null ? 8083 : port));
+        builder.withSetting(bolt.encryption_level, BoltConnector.EncryptionLevel.OPTIONAL.toString());
+        builder.withSetting(GraphDatabaseSettings.auth_enabled, "false");
+        builder.withSetting(GraphDatabaseSettings.procedure_unrestricted, "apoc.*");
+        builder.withSetting(GraphDatabaseSettings.procedure_whitelist, "apoc.*");
+        builder.withSetting(Settings.setting("dbms.directories.import", Settings.STRING, ""), importPath);
+        builder.withSetting(Settings.setting("apoc.import.file.enabled", Settings.BOOLEAN, "false"), "true");
+        builder.withSetting(Settings.setting("apoc.export.file.enabled", Settings.BOOLEAN, "false"), "true");
+        final Config config = builder.build();
+        try {
+            MapUtil.store(config.getRaw(), configFilePath.toFile());
+        } catch (IOException ignored) {
+        }
+        return config;
     }
 
     public static void registerApocProcedures(GraphDatabaseService db) {
@@ -91,7 +110,7 @@ class Neo4jService {
         try {
             FileUtils.deleteDirectory(Paths.get(neo4jPath, "certificates").toFile());
             FileUtils.deleteDirectory(Paths.get(neo4jPath, "logs").toFile());
-            FileUtils.deleteDirectory(new File(databasePath));
+            FileUtils.deleteDirectory(databasePath.toFile());
             FileUtils.deleteQuietly(Paths.get(neo4jPath, "store_lock").toFile());
         } catch (IOException e) {
             if (LOGGER.isErrorEnabled())
