@@ -137,17 +137,20 @@ class Neo4jService {
 
     private HashMap<Long, Long> createNeo4jNodes(final Graph graph) {
         final HashMap<Long, Long> nodeIdNeo4jIdMap = new HashMap<>();
-        if (LOGGER.isInfoEnabled())
-            LOGGER.info("Creating nodes...");
-        batchIterate(graph.getNodes(), nodes -> transactionTemplate.execute(tx -> {
-            for (final Node node : nodes) {
-                final org.neo4j.graphdb.Node neo4jNode = dbService.createNode();
-                for (final String propertyKey : node.keySet())
-                    setPropertySafe(node, neo4jNode, propertyKey);
-                nodeIdNeo4jIdMap.put(node.getId(), neo4jNode.getId());
-                neo4jNode.addLabel(Label.label(node.getLabel()));
-            }
-        }));
+        final String[] labels = graph.getNodeLabels();
+        for (int i = 0; i < labels.length; i++) {
+            if (LOGGER.isInfoEnabled())
+                LOGGER.info("Creating nodes with label '" + labels[i] + "' (" + (i + 1) + "/" + labels.length + ")...");
+            batchIterate(graph.getNodes(labels[i]), nodes -> transactionTemplate.execute(tx -> {
+                for (final Node node : nodes) {
+                    final org.neo4j.graphdb.Node neo4jNode = dbService.createNode();
+                    for (final String propertyKey : node.keySet())
+                        setPropertySafe(node, neo4jNode, propertyKey);
+                    nodeIdNeo4jIdMap.put(node.getId(), neo4jNode.getId());
+                    neo4jNode.addLabel(Label.label(node.getLabel()));
+                }
+            }));
+        }
         return nodeIdNeo4jIdMap;
     }
 
@@ -212,24 +215,28 @@ class Neo4jService {
     }
 
     private void createNeo4jEdges(final Graph graph, final HashMap<Long, Long> nodeIdNeo4jIdMap) {
-        if (LOGGER.isInfoEnabled())
-            LOGGER.info("Creating edges...");
-        batchIterate(graph.getEdges(), edges -> transactionTemplate.execute(tx -> {
-            for (final Edge edge : edges) {
-                final RelationshipType relationshipType = RelationshipType.withName(edge.getLabel());
-                final org.neo4j.graphdb.Node fromNode = dbService.getNodeById(nodeIdNeo4jIdMap.get(edge.getFromId()));
-                final org.neo4j.graphdb.Node toNode = dbService.getNodeById(nodeIdNeo4jIdMap.get(edge.getToId()));
-                final Relationship relationship = fromNode.createRelationshipTo(toNode, relationshipType);
-                for (final String propertyKey : edge.keySet())
-                    if (!Edge.IGNORED_FIELDS.contains(propertyKey)) {
-                        Object value = edge.getProperty(propertyKey);
-                        if (value instanceof Collection)
-                            value = convertCollectionToArray((Collection<?>) value);
-                        if (value != null)
-                            relationship.setProperty(propertyKey, value);
-                    }
-            }
-        }));
+        final String[] labels = graph.getEdgeLabels();
+        for (int i = 0; i < labels.length; i++) {
+            if (LOGGER.isInfoEnabled())
+                LOGGER.info("Creating edges with label '" + labels[i] + "' (" + (i + 1) + "/" + labels.length + ")...");
+            batchIterate(graph.getEdges(labels[i]), edges -> transactionTemplate.execute(tx -> {
+                for (final Edge edge : edges) {
+                    final RelationshipType relationshipType = RelationshipType.withName(edge.getLabel());
+                    final org.neo4j.graphdb.Node fromNode = dbService.getNodeById(
+                            nodeIdNeo4jIdMap.get(edge.getFromId()));
+                    final org.neo4j.graphdb.Node toNode = dbService.getNodeById(nodeIdNeo4jIdMap.get(edge.getToId()));
+                    final Relationship relationship = fromNode.createRelationshipTo(toNode, relationshipType);
+                    for (final String propertyKey : edge.keySet())
+                        if (!Edge.IGNORED_FIELDS.contains(propertyKey)) {
+                            Object value = edge.getProperty(propertyKey);
+                            if (value instanceof Collection)
+                                value = convertCollectionToArray((Collection<?>) value);
+                            if (value != null)
+                                relationship.setProperty(propertyKey, value);
+                        }
+                }
+            }));
+        }
     }
 
     private void createNeo4jIndices(final Graph graph) {
