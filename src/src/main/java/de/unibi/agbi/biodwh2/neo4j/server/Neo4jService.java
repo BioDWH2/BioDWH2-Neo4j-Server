@@ -1,32 +1,34 @@
 package de.unibi.agbi.biodwh2.neo4j.server;
 
+import apoc.ApocConfig;
 import de.unibi.agbi.biodwh2.core.model.graph.Edge;
 import de.unibi.agbi.biodwh2.core.model.graph.Graph;
 import de.unibi.agbi.biodwh2.core.model.graph.IndexDescription;
 import de.unibi.agbi.biodwh2.core.model.graph.Node;
 import org.apache.commons.io.FileUtils;
+import org.neo4j.configuration.Config;
+import org.neo4j.configuration.GraphDatabaseSettings;
+import org.neo4j.configuration.SettingImpl;
+import org.neo4j.configuration.SettingValueParsers;
+import org.neo4j.configuration.connectors.BoltConnector;
+import org.neo4j.configuration.connectors.HttpConnector;
+import org.neo4j.configuration.connectors.HttpsConnector;
+import org.neo4j.configuration.helpers.SocketAddress;
+import org.neo4j.dbms.api.DatabaseManagementService;
+import org.neo4j.dbms.api.DatabaseManagementServiceBuilder;
 import org.neo4j.graphdb.*;
-import org.neo4j.graphdb.factory.GraphDatabaseBuilder;
-import org.neo4j.graphdb.factory.GraphDatabaseFactory;
-import org.neo4j.graphdb.factory.GraphDatabaseSettings;
+import org.neo4j.graphdb.config.Setting;
 import org.neo4j.graphdb.schema.Schema;
-import org.neo4j.helpers.TransactionTemplate;
-import org.neo4j.helpers.collection.MapUtil;
-import org.neo4j.kernel.configuration.BoltConnector;
-import org.neo4j.kernel.configuration.Config;
-import org.neo4j.kernel.configuration.Settings;
-import org.neo4j.kernel.impl.proc.Procedures;
-import org.neo4j.kernel.internal.GraphDatabaseAPI;
+import org.neo4j.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 
 class Neo4jService {
@@ -36,72 +38,61 @@ class Neo4jService {
     private final String neo4jPath;
     private final Path databasePath;
     private final String importPath;
-    private final Path configFilePath;
+    private DatabaseManagementService managementService;
     private GraphDatabaseService dbService;
-    private TransactionTemplate transactionTemplate;
 
     public Neo4jService(final String workspacePath) {
         this.workspacePath = workspacePath;
         neo4jPath = Paths.get(workspacePath, "neo4j").toString();
         databasePath = Paths.get(neo4jPath, "neo4j.db");
         importPath = Paths.get(neo4jPath, "import").toString();
-        configFilePath = Paths.get(neo4jPath, "neo4j.conf");
     }
 
-    public void startNeo4jService(Integer port) {
+    public void startNeo4jService(final Integer boltPort) {
         Paths.get(neo4jPath).toFile().mkdir();
         Paths.get(importPath).toFile().mkdir();
-        final Config config = defaultConfigFileExists() ? Config.fromFile(configFilePath).build() :
-                              createAndStoreDefaultConfig(port);
+        final Config config = createAndStoreDefaultConfig(boltPort);
         if (LOGGER.isInfoEnabled())
-            LOGGER.info("Starting Neo4j DBMS on bolt://" + config.get(config.boltConnectors().get(0).listen_address) +
-                        "...");
-        GraphDatabaseBuilder builder = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(databasePath.toFile());
-        builder.setConfig(config.getRaw());
-        dbService = builder.newGraphDatabase();
-        registerApocProcedures(dbService);
-        Runtime.getRuntime().addShutdownHook(new Thread(dbService::shutdown));
-        transactionTemplate = new TransactionTemplate().with(dbService);
+            LOGGER.info("Starting Neo4j DBMS on bolt://" + config.get(BoltConnector.listen_address) + "...");
+        final Map<Setting<?>, Object> configRaw = new HashMap<>(config.getValues());
+        managementService = new DatabaseManagementServiceBuilder(databasePath).setConfig(configRaw).build();
+        dbService = managementService.database(GraphDatabaseSettings.DEFAULT_DATABASE_NAME);
+        Runtime.getRuntime().addShutdownHook(new Thread(managementService::shutdown));
     }
 
-    private boolean defaultConfigFileExists() {
-        return configFilePath.toFile().exists();
-    }
-
-    private Config createAndStoreDefaultConfig(final Integer port) {
-        final Config.Builder builder = Config.builder().withServerDefaults();
-        builder.withSetting(GraphDatabaseSettings.pagecache_memory, "512M");
-        builder.withSetting(GraphDatabaseSettings.string_block_size, "60");
-        builder.withSetting(GraphDatabaseSettings.array_block_size, "300");
-        builder.withSetting(GraphDatabaseSettings.store_internal_log_level, "DEBUG");
-        BoltConnector bolt = new BoltConnector("bolt");
-        builder.withSetting(bolt.listen_address, "0.0.0.0:" + (port == null ? 8083 : port));
-        builder.withSetting(bolt.encryption_level, BoltConnector.EncryptionLevel.OPTIONAL.toString());
-        builder.withSetting(GraphDatabaseSettings.auth_enabled, "false");
-        builder.withSetting(GraphDatabaseSettings.procedure_unrestricted, "apoc.*");
-        builder.withSetting(GraphDatabaseSettings.procedure_whitelist, "apoc.*");
-        builder.withSetting(Settings.setting("dbms.directories.import", Settings.STRING, ""), importPath);
-        builder.withSetting(Settings.setting("apoc.import.file.enabled", Settings.BOOLEAN, "false"), "true");
-        builder.withSetting(Settings.setting("apoc.export.file.enabled", Settings.BOOLEAN, "false"), "true");
+    private Config createAndStoreDefaultConfig(final Integer boltPort) {
+        final Config.Builder builder = Config.newBuilder().setDefaults(GraphDatabaseSettings.SERVER_DEFAULTS);
+        builder.set(GraphDatabaseSettings.pagecache_memory, "512M");
+        builder.set(GraphDatabaseSettings.store_internal_log_level, Level.DEBUG);
+        builder.set(HttpConnector.enabled, false);
+        builder.set(HttpsConnector.enabled, false);
+        builder.set(BoltConnector.enabled, true);
+        builder.set(BoltConnector.listen_address, new SocketAddress("0.0.0.0", boltPort == null ? 8083 : boltPort));
+        builder.set(BoltConnector.encryption_level, BoltConnector.EncryptionLevel.DISABLED);
+        builder.set(SettingImpl.newBuilder("dbms.ssl.policy.bolt.enabled", SettingValueParsers.BOOL, false).build(),
+                    false);
+        builder.set(GraphDatabaseSettings.auth_enabled, false);
+        // TODO: builder.set(GraphDatabaseSettings.plugin_dir, getApocPluginPath());
+        builder.set(GraphDatabaseSettings.procedure_unrestricted, Collections.singletonList("apoc.*"));
+        builder.set(GraphDatabaseSettings.procedure_allowlist, Collections.singletonList("apoc.*"));
+        builder.set(SettingImpl.newBuilder("dbms.directories.import", SettingValueParsers.PATH, null).build(),
+                    Paths.get(importPath));
+        builder.set(SettingImpl.newBuilder("apoc.import.file.enabled", SettingValueParsers.BOOL, false).build(), true);
+        builder.set(SettingImpl.newBuilder("apoc.export.file.enabled", SettingValueParsers.BOOL, false).build(), true);
         final Config config = builder.build();
-        try {
-            MapUtil.store(config.getRaw(), configFilePath.toFile());
-        } catch (IOException ignored) {
-        }
         return config;
     }
 
-    public static void registerApocProcedures(GraphDatabaseService db) {
-        final Procedures proceduresService = ((GraphDatabaseAPI) db).getDependencyResolver().resolveDependency(
-                Procedures.class, DependencyResolver.SelectionStrategy.ONLY);
-        for (final Class<?> procedure : Factory.getInstance().loadAllClasses("apoc.")) {
-            try {
-                proceduresService.registerProcedure(procedure, false);
-                proceduresService.registerFunction(procedure, false);
-                proceduresService.registerAggregationFunction(procedure, false);
-            } catch (Throwable ignored) {
-            }
+    private Path getApocPluginPath() {
+        try {
+            return new File(
+                    ApocConfig.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile()
+                                                                                                 .toPath();
+        } catch (URISyntaxException e) {
+            if (LOGGER.isWarnEnabled())
+                LOGGER.warn("Failed to register APOC procedures", e);
         }
+        return null;
     }
 
     public void deleteOldDatabase() {
@@ -119,7 +110,7 @@ class Neo4jService {
     }
 
     public void shutdown() {
-        dbService.shutdown();
+        managementService.shutdown();
     }
 
     public void createDatabase() {
@@ -141,20 +132,23 @@ class Neo4jService {
         for (int i = 0; i < labels.length; i++) {
             if (LOGGER.isInfoEnabled())
                 LOGGER.info("Creating nodes with label '" + labels[i] + "' (" + (i + 1) + "/" + labels.length + ")...");
-            batchIterate(graph.getNodes(labels[i]), nodes -> transactionTemplate.execute(tx -> {
-                for (final Node node : nodes) {
-                    final org.neo4j.graphdb.Node neo4jNode = dbService.createNode();
-                    for (final String propertyKey : node.keySet())
-                        setPropertySafe(node, neo4jNode, propertyKey);
-                    nodeIdNeo4jIdMap.put(node.getId(), neo4jNode.getId());
-                    neo4jNode.addLabel(Label.label(node.getLabel()));
+            batchIterate(graph.getNodes(labels[i]), nodes -> {
+                try (Transaction tx = dbService.beginTx()) {
+                    for (final Node node : nodes) {
+                        final org.neo4j.graphdb.Node neo4jNode = tx.createNode();
+                        for (final String propertyKey : node.keySet())
+                            setPropertySafe(node, neo4jNode, propertyKey);
+                        nodeIdNeo4jIdMap.put(node.getId(), neo4jNode.getId());
+                        neo4jNode.addLabel(Label.label(node.getLabel()));
+                    }
+                    tx.commit();
                 }
-            }));
+            });
         }
         return nodeIdNeo4jIdMap;
     }
 
-    private <T> void batchIterate(final Iterable<T> iterable, Consumer<List<T>> consumer) {
+    private <T> void batchIterate(final Iterable<T> iterable, final Consumer<List<T>> consumer) {
         List<T> currentBatch = new ArrayList<>();
         for (T element : iterable) {
             currentBatch.add(element);
@@ -219,23 +213,25 @@ class Neo4jService {
         for (int i = 0; i < labels.length; i++) {
             if (LOGGER.isInfoEnabled())
                 LOGGER.info("Creating edges with label '" + labels[i] + "' (" + (i + 1) + "/" + labels.length + ")...");
-            batchIterate(graph.getEdges(labels[i]), edges -> transactionTemplate.execute(tx -> {
-                for (final Edge edge : edges) {
-                    final RelationshipType relationshipType = RelationshipType.withName(edge.getLabel());
-                    final org.neo4j.graphdb.Node fromNode = dbService.getNodeById(
-                            nodeIdNeo4jIdMap.get(edge.getFromId()));
-                    final org.neo4j.graphdb.Node toNode = dbService.getNodeById(nodeIdNeo4jIdMap.get(edge.getToId()));
-                    final Relationship relationship = fromNode.createRelationshipTo(toNode, relationshipType);
-                    for (final String propertyKey : edge.keySet())
-                        if (!Edge.IGNORED_FIELDS.contains(propertyKey)) {
-                            Object value = edge.getProperty(propertyKey);
-                            if (value instanceof Collection)
-                                value = convertCollectionToArray((Collection<?>) value);
-                            if (value != null)
-                                relationship.setProperty(propertyKey, value);
-                        }
+            batchIterate(graph.getEdges(labels[i]), edges -> {
+                try (Transaction tx = dbService.beginTx()) {
+                    for (final Edge edge : edges) {
+                        final RelationshipType relationshipType = RelationshipType.withName(edge.getLabel());
+                        final org.neo4j.graphdb.Node fromNode = tx.getNodeById(nodeIdNeo4jIdMap.get(edge.getFromId()));
+                        final org.neo4j.graphdb.Node toNode = tx.getNodeById(nodeIdNeo4jIdMap.get(edge.getToId()));
+                        final Relationship relationship = fromNode.createRelationshipTo(toNode, relationshipType);
+                        for (final String propertyKey : edge.keySet())
+                            if (!Edge.IGNORED_FIELDS.contains(propertyKey)) {
+                                Object value = edge.getProperty(propertyKey);
+                                if (value instanceof Collection)
+                                    value = convertCollectionToArray((Collection<?>) value);
+                                if (value != null)
+                                    relationship.setProperty(propertyKey, value);
+                            }
+                    }
+                    tx.commit();
                 }
-            }));
+            });
         }
     }
 
@@ -244,7 +240,7 @@ class Neo4jService {
             LOGGER.info("Creating indices...");
         final IndexDescription[] indices = graph.indexDescriptions();
         try (Transaction tx = dbService.beginTx()) {
-            Schema schema = dbService.schema();
+            final Schema schema = tx.schema();
             for (final IndexDescription index : indices) {
                 if (LOGGER.isInfoEnabled())
                     LOGGER.info("Creating " + index.getType() + " index on '" + index.getProperty() + "' field for " +
@@ -259,7 +255,7 @@ class Neo4jService {
                     // TODO
                 }
             }
-            tx.success();
+            tx.commit();
         } catch (Exception e) {
             if (LOGGER.isErrorEnabled())
                 LOGGER.error("Failed to create neo4j indices", e);
