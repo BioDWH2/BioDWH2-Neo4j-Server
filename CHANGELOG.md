@@ -1,5 +1,12 @@
 # Changelog
 
+## 📦 Version [v1.2.6](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/tag/v1.2.6)
+
+Released: 14.07.2022
+
+* ```[feature]``` Update to Neo4j 4.X which requires Java 11 instead of Java 8 as before
+* ```[chore]``` Update dependencies
+
 ## 📦 Version [v1.2.5](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/tag/v1.2.5)
 
 Released: 04.08.2021

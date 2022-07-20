@@ -9,7 +9,7 @@ This repository contains the **BioDWH2-Neo4j-Server** utility which can be used 
 The latest release version of **BioDWH2-Neo4j-Server** can be downloaded [here](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/latest).
 
 ## Usage
-BioDWH2-Neo4j-Server requires the Java Runtime Environment version 8. The JRE 8 is available [here](https://www.oracle.com/java/technologies/javase-jre8-downloads.html).
+> ⚠️️ BioDWH2-Neo4j-Server is built upon Neo4j 4.X which requires the Java Runtime Environment (JRE) version 11. The JRE 11 is available [here](https://adoptium.net).
 
 Creating a database from any workspace is done using the following command. Every time the workspace is updated or changed, the create command has to be executed again.
 ~~~BASH

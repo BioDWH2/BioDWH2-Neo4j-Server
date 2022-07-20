@@ -72,7 +72,7 @@ class Neo4jService {
         builder.set(SettingImpl.newBuilder("dbms.ssl.policy.bolt.enabled", SettingValueParsers.BOOL, false).build(),
                     false);
         builder.set(GraphDatabaseSettings.auth_enabled, false);
-        // TODO: builder.set(GraphDatabaseSettings.plugin_dir, getApocPluginPath());
+        builder.set(GraphDatabaseSettings.plugin_dir, getApocPluginPath());
         builder.set(GraphDatabaseSettings.procedure_unrestricted, Collections.singletonList("apoc.*"));
         builder.set(GraphDatabaseSettings.procedure_allowlist, Collections.singletonList("apoc.*"));
         builder.set(SettingImpl.newBuilder("dbms.directories.import", SettingValueParsers.PATH, null).build(),
