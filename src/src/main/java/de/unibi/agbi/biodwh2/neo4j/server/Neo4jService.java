@@ -1,6 +1,5 @@
 package de.unibi.agbi.biodwh2.neo4j.server;
 
-import apoc.ApocConfig;
 import de.unibi.agbi.biodwh2.core.model.graph.Edge;
 import de.unibi.agbi.biodwh2.core.model.graph.Graph;
 import de.unibi.agbi.biodwh2.core.model.graph.IndexDescription;
@@ -19,13 +18,13 @@ import org.neo4j.dbms.api.DatabaseManagementServiceBuilder;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.config.Setting;
 import org.neo4j.graphdb.schema.Schema;
+import org.neo4j.kernel.api.procedure.GlobalProcedures;
+import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -58,6 +57,7 @@ class Neo4jService {
         managementService = new DatabaseManagementServiceBuilder(databasePath).setConfig(configRaw).build();
         dbService = managementService.database(GraphDatabaseSettings.DEFAULT_DATABASE_NAME);
         Runtime.getRuntime().addShutdownHook(new Thread(managementService::shutdown));
+        registerApocProcedures();
     }
 
     private Config createAndStoreDefaultConfig(final Integer boltPort) {
@@ -72,27 +72,25 @@ class Neo4jService {
         builder.set(SettingImpl.newBuilder("dbms.ssl.policy.bolt.enabled", SettingValueParsers.BOOL, false).build(),
                     false);
         builder.set(GraphDatabaseSettings.auth_enabled, false);
-        builder.set(GraphDatabaseSettings.plugin_dir, getApocPluginPath());
         builder.set(GraphDatabaseSettings.procedure_unrestricted, Collections.singletonList("apoc.*"));
         builder.set(GraphDatabaseSettings.procedure_allowlist, Collections.singletonList("apoc.*"));
         builder.set(SettingImpl.newBuilder("dbms.directories.import", SettingValueParsers.PATH, null).build(),
                     Paths.get(importPath));
         builder.set(SettingImpl.newBuilder("apoc.import.file.enabled", SettingValueParsers.BOOL, false).build(), true);
         builder.set(SettingImpl.newBuilder("apoc.export.file.enabled", SettingValueParsers.BOOL, false).build(), true);
-        final Config config = builder.build();
-        return config;
+        return builder.build();
     }
 
-    private Path getApocPluginPath() {
-        try {
-            return new File(
-                    ApocConfig.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile()
-                                                                                                 .toPath();
-        } catch (URISyntaxException e) {
-            if (LOGGER.isWarnEnabled())
-                LOGGER.warn("Failed to register APOC procedures", e);
-        }
-        return null;
+    private void registerApocProcedures() {
+        final GlobalProcedures procedures = ((GraphDatabaseAPI) dbService).getDependencyResolver().resolveDependency(
+                GlobalProcedures.class);
+        final List<Class<?>> apocClasses = Factory.getInstance().loadAllClasses("apoc.");
+        apocClasses.forEach((proc) -> {
+            try {
+                procedures.registerProcedure(proc);
+            } catch (Throwable ignored) {
+            }
+        });
     }
 
     public void deleteOldDatabase() {
