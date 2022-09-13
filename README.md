@@ -23,6 +23,8 @@ Once the database has been created, the database and Neo4j-Browser can be starte
 
 Optionally, the ports for the Neo4j-Browser and Neo4j bolt protocol can be adjusted using the port and bolt-port command line arguments.
 
+The Neo4j Browser which opens automatically can be used to connect to the Neo4j database without authentication. 
+
 ## Help
 ~~~
 Usage: BioDWH2-Neo4j-Server.jar [-h] [-bp=<boltPort>] [-c=<workspacePath>]
