@@ -57,7 +57,7 @@ class Neo4jService {
         managementService = new DatabaseManagementServiceBuilder(databasePath).setConfig(configRaw).build();
         dbService = managementService.database(GraphDatabaseSettings.DEFAULT_DATABASE_NAME);
         Runtime.getRuntime().addShutdownHook(new Thread(managementService::shutdown));
-        registerApocProcedures();
+        registerApocProceduresAndFunctions();
     }
 
     private Config createAndStoreDefaultConfig(final Integer boltPort) {
@@ -81,13 +81,21 @@ class Neo4jService {
         return builder.build();
     }
 
-    private void registerApocProcedures() {
+    private void registerApocProceduresAndFunctions() {
         final GlobalProcedures procedures = ((GraphDatabaseAPI) dbService).getDependencyResolver().resolveDependency(
                 GlobalProcedures.class);
         final List<Class<?>> apocClasses = Factory.getInstance().loadAllClasses("apoc.");
         apocClasses.forEach((proc) -> {
             try {
                 procedures.registerProcedure(proc);
+            } catch (Throwable ignored) {
+            }
+            try {
+                procedures.registerFunction(proc);
+            } catch (Throwable ignored) {
+            }
+            try {
+                procedures.registerAggregationFunction(proc);
             } catch (Throwable ignored) {
             }
         });
