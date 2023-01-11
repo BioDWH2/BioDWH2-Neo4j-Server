@@ -85,17 +85,17 @@
         <dependency>
             <groupId>de.unibi.agbi.biodwh2</groupId>
             <artifactId>biodwh2-core</artifactId>
-            <version>0.4.6</version>
+            <version>0.4.8</version>
         </dependency>
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin</artifactId>
-            <version>4.6.4</version>
+            <version>5.3.0</version>
         </dependency>
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
-            <version>4.6.3</version>
+            <version>4.7.0</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
@@ -105,7 +105,7 @@
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j</artifactId>
-            <version>4.4.10</version>
+            <version>4.4.16</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -116,18 +116,18 @@
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-dbms</artifactId>
-            <version>4.4.10</version>
+            <version>4.4.16</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-bolt</artifactId>
-            <version>4.4.10</version>
+            <version>4.4.16</version>
         </dependency>
         <!-- https://neo4j-contrib.github.io/neo4j-apoc-procedures/versions.json -->
         <dependency>
             <groupId>org.neo4j.procedure</groupId>
             <artifactId>apoc</artifactId>
-            <version>4.4.0.8</version>
+            <version>4.4.0.12</version>
             <classifier>all</classifier>
         </dependency>
     </dependencies>

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.unibi.agbi.biodwh2.core.model.github.GithubRelease;
 import io.javalin.Javalin;
-import io.javalin.core.JavalinConfig;
+import io.javalin.config.JavalinConfig;
 import io.javalin.http.staticfiles.Location;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -129,7 +129,7 @@ final class Neo4jBrowser {
     }
 
     private void configureJavalin(final JavalinConfig config) {
-        config.addStaticFiles(browserDistPath, Location.EXTERNAL);
+        config.staticFiles.add(browserDistPath, Location.EXTERNAL);
         config.showJavalinBanner = false;
     }
 }
