@@ -85,17 +85,17 @@
         <dependency>
             <groupId>de.unibi.agbi.biodwh2</groupId>
             <artifactId>biodwh2-core</artifactId>
-            <version>0.4.8</version>
+            <version>0.4.12</version>
         </dependency>
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin</artifactId>
-            <version>5.3.2</version>
+            <version>5.4.2</version>
         </dependency>
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
-            <version>4.7.0</version>
+            <version>4.7.3</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
@@ -105,32 +105,32 @@
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j</artifactId>
-            <version>5.3.0</version>
+            <version>5.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-dbms</artifactId>
-            <version>5.3.0</version>
+            <version>5.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-bolt</artifactId>
-            <version>5.3.0</version>
+            <version>5.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j.procedure</groupId>
             <artifactId>apoc-extended</artifactId>
-            <version>5.3.1</version>
+            <version>5.6.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j.procedure</groupId>
             <artifactId>apoc-common</artifactId>
-            <version>5.4.1</version>
+            <version>5.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j.procedure</groupId>
             <artifactId>apoc-core</artifactId>
-            <version>5.4.1</version>
+            <version>5.7.0</version>
         </dependency>
     </dependencies>
 
