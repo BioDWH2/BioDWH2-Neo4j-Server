@@ -99,7 +99,7 @@ final class Factory {
     private static Class<?> tryLoadClass(final ClassLoader classLoader, final String classPath) {
         try {
             return classLoader.loadClass(classPath);
-        } catch (ClassNotFoundException ignored) {
+        } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
             return null;
         }
     }
