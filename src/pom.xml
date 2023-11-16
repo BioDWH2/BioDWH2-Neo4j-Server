@@ -90,7 +90,7 @@
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin</artifactId>
-            <version>5.6.2</version>
+            <version>5.6.3</version>
         </dependency>
         <dependency>
             <groupId>info.picocli</groupId>
@@ -100,37 +100,37 @@
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>1.15</version>
+            <version>1.16.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j</artifactId>
-            <version>5.12.0</version>
+            <version>5.13.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-dbms</artifactId>
-            <version>5.12.0</version>
+            <version>5.13.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-bolt</artifactId>
-            <version>5.12.0</version>
+            <version>5.13.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j.procedure</groupId>
             <artifactId>apoc-extended</artifactId>
-            <version>5.12.0</version>
+            <version>5.13.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j.procedure</groupId>
             <artifactId>apoc-common</artifactId>
-            <version>5.12.0</version>
+            <version>5.13.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j.procedure</groupId>
             <artifactId>apoc-core</artifactId>
-            <version>5.12.0</version>
+            <version>5.13.0</version>
         </dependency>
     </dependencies>
 
