@@ -85,7 +85,7 @@
         <dependency>
             <groupId>de.unibi.agbi.biodwh2</groupId>
             <artifactId>biodwh2-core</artifactId>
-            <version>0.4.12</version>
+            <version>0.4.13</version>
         </dependency>
         <dependency>
             <groupId>io.javalin</groupId>
