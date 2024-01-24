@@ -158,7 +158,7 @@ class Neo4jService {
                 currentBatch.clear();
             }
         }
-        if (currentBatch.size() > 0)
+        if (!currentBatch.isEmpty())
             consumer.accept(currentBatch);
     }
 
@@ -166,16 +166,24 @@ class Neo4jService {
         try {
             if (!Node.IGNORED_FIELDS.contains(propertyKey)) {
                 Object value = node.getProperty(propertyKey);
+                if (value instanceof Integer[] array)
+                    for (int i = 0; i < array.length; i++)
+                        array[i] = array[i] == null ? -1 : array[i];
+                if (value instanceof Long[] array)
+                    for (int i = 0; i < array.length; i++)
+                        array[i] = array[i] == null ? -1 : array[i];
                 if (value instanceof Collection)
                     value = convertCollectionToArray((Collection<?>) value);
+                if (value instanceof Enum<?>)
+                    value = value.toString();
                 if (value != null)
                     neo4jNode.setProperty(propertyKey, value);
             }
         } catch (IllegalArgumentException e) {
             if (LOGGER.isWarnEnabled())
                 LOGGER.warn(
-                        "Illegal property '" + propertyKey + " -> " + node.getProperty(propertyKey) + "' for node '" +
-                        node.getId() + "[:" + node.getLabel() + "]'");
+                        "Illegal property '" + propertyKey + "' -> '" + node.getProperty(propertyKey) + "' for node '" +
+                        node.getId() + "[:" + node.getLabel() + "]'", e);
         }
     }
 
