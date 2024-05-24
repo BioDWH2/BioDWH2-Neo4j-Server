@@ -85,22 +85,22 @@
         <dependency>
             <groupId>de.unibi.agbi.biodwh2</groupId>
             <artifactId>biodwh2-core</artifactId>
-            <version>0.4.14</version>
+            <version>0.5.1</version>
         </dependency>
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin</artifactId>
-            <version>5.6.3</version>
+            <version>6.1.4</version>
         </dependency>
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
-            <version>4.7.5</version>
+            <version>4.7.6</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>1.16.0</version>
+            <version>1.17.0</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
