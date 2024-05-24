@@ -1,5 +1,12 @@
 # Changelog
 
+## 📦 Version [v1.3.2](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/tag/v1.3.2)
+
+Released: 24.05.2024
+
+* ```[feature]``` Speedup database import
+* ```[chore]``` Update dependencies
+
 ## 📦 Version [v1.3.1](https://github.com/BioDWH2/BioDWH2-Neo4j-Server/releases/tag/v1.3.1)
 
 Released: 25.01.2023
