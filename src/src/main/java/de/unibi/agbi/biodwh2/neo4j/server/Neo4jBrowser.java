@@ -72,7 +72,7 @@ final class Neo4jBrowser {
     }
 
     private String[] getNeo4jBrowserDownloadUrlCandidates() {
-        final TypeReference<List<GithubRelease>> releaseListType = new TypeReference<List<GithubRelease>>() {
+        final TypeReference<List<GithubRelease>> releaseListType = new TypeReference<>() {
         };
         final Set<String> candidates = new HashSet<>();
         candidates.add(FALLBACK_DOWNLOAD_URL);
@@ -81,7 +81,7 @@ final class Neo4jBrowser {
             final URL neo4jBrowserRelease = new URL(NEO4J_BROWSER_RELEASE_URL);
             final List<GithubRelease> releases = mapper.readValue(neo4jBrowserRelease, releaseListType);
             for (GithubRelease release : releases)
-                if (release.assets != null && release.assets.size() > 0)
+                if (release.assets != null && !release.assets.isEmpty())
                     candidates.add(release.assets.get(0).browserDownloadUrl);
         } catch (IOException | ClassCastException e) {
             if (LOGGER.isErrorEnabled())
@@ -96,7 +96,7 @@ final class Neo4jBrowser {
              final GzipCompressorInputStream gzipInputStream = new GzipCompressorInputStream(inputStream);
              final TarArchiveInputStream tarInputStream = new TarArchiveInputStream(gzipInputStream)) {
             TarArchiveEntry entry;
-            while ((entry = (TarArchiveEntry) tarInputStream.getNextEntry()) != null) {
+            while ((entry = tarInputStream.getNextEntry()) != null) {
                 if (entry.isFile()) {
                     final Path f = Paths.get(destination, entry.getName());
                     final Path parent = f.getParent();

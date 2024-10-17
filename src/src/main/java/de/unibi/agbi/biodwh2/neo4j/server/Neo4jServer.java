@@ -63,11 +63,11 @@ public class Neo4jServer {
     private boolean verifyWorkspaceExists(final String workspacePath) {
         if (StringUtils.isEmpty(workspacePath) || !Paths.get(workspacePath).toFile().exists()) {
             if (LOGGER.isErrorEnabled())
-                LOGGER.error("Workspace path '" + workspacePath + "' was not found");
+                LOGGER.error("Workspace path '{}' was not found", workspacePath);
             return false;
         }
         if (LOGGER.isInfoEnabled())
-            LOGGER.info("Using workspace directory '" + workspacePath + "'");
+            LOGGER.info("Using workspace directory '{}'", workspacePath);
         return true;
     }
 
