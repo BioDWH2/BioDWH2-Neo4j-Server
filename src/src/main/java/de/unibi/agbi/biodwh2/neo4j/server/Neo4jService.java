@@ -83,7 +83,7 @@ class Neo4jService {
         builder.setConfig(BoltConnector.encryption_level, BoltConnector.EncryptionLevel.DISABLED);
         builder.setConfig(bolt_ssl_policy, false);
         builder.setConfig(GraphDatabaseSettings.auth_enabled, false);
-        builder.setConfig(GraphDatabaseSettings.max_concurrent_transactions, 2);
+        builder.setConfig(GraphDatabaseSettings.keep_logical_logs, "2 files");
         builder.setConfig(GraphDatabaseSettings.fail_on_missing_files, false);
         builder.setConfig(GraphDatabaseSettings.procedure_unrestricted, Collections.singletonList("apoc.*"));
         builder.setConfig(GraphDatabaseSettings.procedure_allowlist, Collections.singletonList("apoc.*"));
